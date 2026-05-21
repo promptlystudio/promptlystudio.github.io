@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Invoice Generator · Promptly Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500family=DM+Mono:wght@300;400;500&family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500family=Cormorant+Garamond:wght@400;500;600family=DM+Mono:wght@300;400;500&family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:      #f7f5f0;
+    --surface: #ffffff;
+    --ink:     #1a1a1a;
+    --muted:   #888;
+    --border:  #e0dcd4;
+    --accent:  #1a1a1a;
+    --green:   #00c46a;
+    --mono:    'DM Mono', monospace;
+    --serif:   'Cormorant Garamond', serif;
+    --sans:    'DM Sans', sans-serif;
+  }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+  }
+
+  /* ── TOP BAR ── */
+  .topbar {
+    background: var(--ink);
+    padding: 14px 40px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .topbar-logo {
+    font-family: var(--mono); font-size: 13px; color: #fff;
+    letter-spacing: 0.04em;
+  }
+  .topbar-logo span { color: var(--green); }
+  .topbar-tagline {
+    font-family: var(--mono); font-size: 10px; color: #555;
+    letter-spacing: 0.1em;
+  }
+  .topbar-cta {
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em;
+    background: var(--green); color: #000;
+    border: none; padding: 8px 18px; cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .topbar-cta:hover { opacity: 0.85; }
+
+  /* ── LAYOUT ── */
+  .app {
+    display: grid;
+    grid-template-columns: 400px 1fr;
+    min-height: calc(100vh - 49px);
+  }
+
+  /* ── FORM PANEL ── */
+  .form-panel {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 40px 32px;
+    overflow-y: auto;
+  }
+  .form-title {
+    font-family: var(--mono); font-size: 10px; color: var(--muted);
+    letter-spacing: 0.16em; margin-bottom: 32px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .form-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  .form-section { margin-bottom: 32px; }
+  .form-section-label {
+    font-family: var(--mono); font-size: 9px; color: var(--muted);
+    letter-spacing: 0.14em; text-transform: uppercase;
+    margin-bottom: 14px; display: block;
+  }
+  .field { margin-bottom: 12px; }
+  .field label {
+    font-size: 11px; color: var(--muted); display: block;
+    margin-bottom: 4px; font-weight: 400;
+  }
+  .field input, .field textarea, .field select {
+    width: 100%; padding: 10px 12px;
+    border: 1px solid var(--border); background: var(--bg);
+    font-family: var(--sans); font-size: 13px; color: var(--ink);
+    outline: none; border-radius: 0;
+    transition: border-color 0.2s;
+  }
+  .field input:focus, .field textarea:focus, .field select:focus {
+    border-color: var(--ink);
+  }
+  .field textarea { resize: vertical; min-height: 60px; }
+
+  /* Items table in form */
+  .items-header {
+    display: grid; grid-template-columns: 1fr 80px 90px 28px;
+    gap: 8px; margin-bottom: 8px;
+  }
+  .items-header span {
+    font-size: 10px; color: var(--muted); font-family: var(--mono);
+    letter-spacing: 0.08em;
+  }
+  .item-row {
+    display: grid; grid-template-columns: 1fr 80px 90px 28px;
+    gap: 8px; margin-bottom: 8px; align-items: center;
+  }
+  .item-row input {
+    width: 100%; padding: 8px 10px;
+    border: 1px solid var(--border); background: var(--bg);
+    font-family: var(--sans); font-size: 12px; color: var(--ink);
+    outline: none;
+  }
+  .item-row input:focus { border-color: var(--ink); }
+  .remove-btn {
+    background: none; border: 1px solid var(--border);
+    color: var(--muted); font-size: 14px; width: 28px; height: 34px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .remove-btn:hover { border-color: #e00; color: #e00; }
+  .add-item-btn {
+    width: 100%; padding: 10px;
+    background: none; border: 1px dashed var(--border);
+    font-family: var(--mono); font-size: 11px; color: var(--muted);
+    cursor: pointer; letter-spacing: 0.08em;
+    transition: border-color 0.2s, color 0.2s;
+    margin-top: 4px;
+  }
+  .add-item-btn:hover { border-color: var(--ink); color: var(--ink); }
+
+  .download-btn {
+    width: 100%; padding: 14px;
+    background: var(--ink); color: #fff;
+    border: none; font-family: var(--mono); font-size: 12px;
+    letter-spacing: 0.1em; cursor: pointer;
+    transition: background 0.2s;
+    margin-top: 8px;
+  }
+  .download-btn:hover { background: #333; }
+
+  /* ── PREVIEW PANEL ── */
+  .preview-panel {
+    padding: 48px;
+    display: flex; flex-direction: column; align-items: center;
+    background: var(--bg);
+    overflow-y: auto;
+  }
+  .preview-label {
+    font-family: var(--mono); font-size: 10px; color: var(--muted);
+    letter-spacing: 0.14em; margin-bottom: 24px; align-self: flex-start;
+  }
+
+  /* ── INVOICE ── */
+  .invoice {
+    width: 680px; max-width: 100%;
+    background: #fff;
+    padding: 64px 56px;
+    position: relative; overflow: hidden;
+    box-shadow: 0 4px 40px rgba(0,0,0,0.08);
+  }
+
+  /* WATERMARK */
+  .invoice-watermark {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    pointer-events: none; z-index: 10;
+    transform: rotate(-35deg);
+  }
+  .invoice-watermark-inner {
+    font-family: var(--mono); font-size: 72px; font-weight: 500;
+    color: rgba(0,0,0,0.06); letter-spacing: 0.12em;
+    white-space: nowrap; user-select: none;
+    border: 6px solid rgba(0,0,0,0.05);
+    padding: 8px 24px;
+    line-height: 1;
+  }
+
+  /* Promptly Studio branding strip */
+  .invoice-brand-strip {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: var(--ink); padding: 12px 56px;
+    display: flex; justify-content: space-between; align-items: center;
+    z-index: 5;
+  }
+  .invoice-brand-strip span {
+    font-family: var(--mono); font-size: 10px; color: #555;
+    letter-spacing: 0.1em;
+  }
+  .invoice-brand-strip strong {
+    font-family: var(--mono); font-size: 11px; color: #fff;
+    letter-spacing: 0.08em;
+  }
+  .invoice-brand-strip .ps-green { color: var(--green); }
+
+  /* Invoice content */
+  .inv-header {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    margin-bottom: 56px;
+  }
+  .inv-title {
+    font-family: var(--serif); font-size: 28px;
+    color: var(--ink); line-height: 1; letter-spacing: -0.02em;
+  }
+  .inv-num {
+    font-family: var(--mono); font-size: 11px; color: var(--muted);
+    margin-top: 6px; letter-spacing: 0.08em;
+  }
+  .inv-meta { text-align: right; }
+  .inv-meta-row {
+    font-family: var(--mono); font-size: 11px; color: var(--muted);
+    margin-bottom: 4px; letter-spacing: 0.04em;
+  }
+  .inv-meta-row strong { color: var(--ink); }
+
+  .inv-parties {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 40px; margin-bottom: 48px;
+    padding-bottom: 32px; border-bottom: 1px solid var(--border);
+  }
+  .inv-party-label {
+    font-family: var(--mono); font-size: 9px; color: var(--muted);
+    letter-spacing: 0.14em; margin-bottom: 10px; display: block;
+  }
+  .inv-party-name {
+    font-size: 16px; font-weight: 500; margin-bottom: 4px;
+  }
+  .inv-party-detail {
+    font-size: 13px; color: var(--muted); line-height: 1.6;
+  }
+
+  /* Line items */
+  .inv-items { margin-bottom: 32px; }
+  .inv-items-header {
+    display: grid; grid-template-columns: 1fr 80px 100px;
+    gap: 16px; padding-bottom: 10px;
+    border-bottom: 2px solid var(--ink);
+    margin-bottom: 4px;
+  }
+  .inv-items-header span {
+    font-family: var(--mono); font-size: 10px; color: var(--muted);
+    letter-spacing: 0.1em;
+  }
+  .inv-items-header span:last-child { text-align: right; }
+  .inv-item-row {
+    display: grid; grid-template-columns: 1fr 80px 100px;
+    gap: 16px; padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .inv-item-row span { font-size: 13px; }
+  .inv-item-row span:last-child { text-align: right; font-family: var(--sans); font-size: 12px; }
+  .inv-item-qty { font-family: var(--sans); font-size: 12px; color: var(--muted); }
+
+  /* Totals */
+  .inv-totals {
+    display: flex; flex-direction: column; align-items: flex-end;
+    margin-bottom: 80px;
+  }
+  .inv-total-row {
+    display: flex; gap: 48px; justify-content: flex-end;
+    font-family: var(--sans); font-size: 12px; color: var(--muted);
+    padding: 5px 0; letter-spacing: 0.01em;
+  }
+  .inv-total-row span:last-child { min-width: 100px; text-align: right; }
+  .inv-total-row.grand {
+    color: var(--ink); font-size: 13px; font-weight: 500;
+    border-top: 1px solid var(--ink); margin-top: 8px; padding-top: 10px;
+  }
+
+  .inv-notes {
+    margin-bottom: 80px;
+  }
+  .inv-notes-label {
+    font-family: var(--mono); font-size: 9px; color: var(--muted);
+    letter-spacing: 0.14em; margin-bottom: 8px; display: block;
+  }
+  .inv-notes p { font-size: 13px; color: var(--muted); line-height: 1.65; }
+
+  /* ── UPGRADE BANNER ── */
+  .upgrade-banner {
+    width: 680px; max-width: 100%;
+    background: var(--ink); padding: 24px 32px;
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 16px;
+  }
+  .upgrade-text { font-family: var(--mono); font-size: 12px; color: #888; letter-spacing: 0.06em; }
+  .upgrade-text strong { color: #fff; display: block; margin-bottom: 2px; font-size: 13px; }
+  .upgrade-btn {
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em;
+    background: var(--green); color: #000; border: none;
+    padding: 12px 24px; cursor: pointer; white-space: nowrap;
+    transition: opacity 0.2s;
+  }
+  .upgrade-btn:hover { opacity: 0.85; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 900px) {
+    .app { grid-template-columns: 1fr; }
+    .form-panel { border-right: none; border-bottom: 1px solid var(--border); }
+    .preview-panel { padding: 24px 16px; }
+    .invoice { padding: 40px 28px; }
+    .topbar { padding: 14px 20px; }
+    .topbar-tagline { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-logo">promptly<span>_</span>studio</div>
+  <div class="topbar-tagline">INVOICE GENERATOR · FREE DEMO</div>
+  <button class="topbar-cta" onclick="window.location.href='mailto:promptlystudio@protonmail.com?subject=Custom Invoice Tool'">GET YOUR OWN VERSION →</button>
+</div>
+
+<div class="app">
+
+  <!-- FORM PANEL -->
+  <div class="form-panel">
+    <div class="form-title">INVOICE DETAILS</div>
+
+    <div class="form-section">
+      <span class="form-section-label">From (You)</span>
+      <div class="field">
+        <label>Your name / business</label>
+        <input type="text" id="fromName" placeholder="Acme Studio" oninput="update()">
+      </div>
+      <div class="field">
+        <label>Email / website</label>
+        <input type="text" id="fromContact" placeholder="hello@acmestudio.com" oninput="update()">
+      </div>
+    </div>
+
+    <div class="form-section">
+      <span class="form-section-label">To (Client)</span>
+      <div class="field">
+        <label>Client name / business</label>
+        <input type="text" id="toName" placeholder="Client Co." oninput="update()">
+      </div>
+      <div class="field">
+        <label>Client email</label>
+        <input type="text" id="toContact" placeholder="client@example.com" oninput="update()">
+      </div>
+    </div>
+
+    <div class="form-section">
+      <span class="form-section-label">Invoice Info</span>
+      <div class="field">
+        <label>Invoice number</label>
+        <input type="text" id="invNum" placeholder="INV-001" oninput="update()">
+      </div>
+      <div class="field">
+        <label>Issue date</label>
+        <input type="date" id="issueDate" oninput="update()">
+      </div>
+      <div class="field">
+        <label>Due date</label>
+        <input type="date" id="dueDate" oninput="update()">
+      </div>
+    </div>
+
+    <div class="form-section">
+      <span class="form-section-label">Line Items</span>
+      <div class="items-header">
+        <span>DESCRIPTION</span>
+        <span>QTY</span>
+        <span>PRICE</span>
+        <span></span>
+      </div>
+      <div id="itemRows"></div>
+      <button class="add-item-btn" onclick="addItem()">+ ADD LINE ITEM</button>
+    </div>
+
+    <div class="form-section">
+      <span class="form-section-label">Notes</span>
+      <div class="field">
+        <textarea id="notes" placeholder="Payment terms, bank details, thank you message..." oninput="update()"></textarea>
+      </div>
+    </div>
+
+    <button class="download-btn" onclick="downloadPDF()">DOWNLOAD PDF ↓</button>
+  </div>
+
+  <!-- PREVIEW PANEL -->
+  <div class="preview-panel">
+    <div class="preview-label">LIVE PREVIEW</div>
+
+    <div class="invoice" id="invoice">
+
+      <!-- WATERMARK -->
+      <div class="invoice-watermark">
+        <div class="invoice-watermark-inner">DEMO</div>
+      </div>
+
+      <!-- INVOICE CONTENT -->
+      <div class="inv-header">
+        <div>
+          <div class="inv-title">INVOICE</div>
+          <div class="inv-num" id="prev-num">INV-001</div>
+        </div>
+        <div class="inv-meta">
+          <div class="inv-meta-row">ISSUED <strong id="prev-issue">—</strong></div>
+          <div class="inv-meta-row">DUE <strong id="prev-due">—</strong></div>
+        </div>
+      </div>
+
+      <div class="inv-parties">
+        <div>
+          <span class="inv-party-label">FROM</span>
+          <div class="inv-party-name" id="prev-from-name">Your Name</div>
+          <div class="inv-party-detail" id="prev-from-contact">your@email.com</div>
+        </div>
+        <div>
+          <span class="inv-party-label">TO</span>
+          <div class="inv-party-name" id="prev-to-name">Client Name</div>
+          <div class="inv-party-detail" id="prev-to-contact">client@email.com</div>
+        </div>
+      </div>
+
+      <div class="inv-items">
+        <div class="inv-items-header">
+          <span>DESCRIPTION</span>
+          <span>QTY</span>
+          <span>AMOUNT</span>
+        </div>
+        <div id="prev-items"></div>
+      </div>
+
+      <div class="inv-totals" id="prev-totals"></div>
+
+      <div class="inv-notes" id="prev-notes-wrap" style="display:none">
+        <span class="inv-notes-label">NOTES</span>
+        <p id="prev-notes"></p>
+      </div>
+
+      <!-- BRANDING STRIP -->
+      <div class="invoice-brand-strip">
+        <span>GENERATED WITH</span>
+        <strong>promptly<span class="ps-green">_</span>studio</strong>
+        <span>promptlystudio.github.io</span>
+      </div>
+
+    </div>
+
+    <!-- UPGRADE BANNER -->
+    <div class="upgrade-banner">
+      <div class="upgrade-text">
+        <strong>Want this without the watermark?</strong>
+        Get a custom version with your logo and branding.
+      </div>
+      <button class="upgrade-btn" onclick="window.location.href='mailto:promptlystudio@protonmail.com?subject=Custom Invoice Tool'">LET'S TALK →</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // ── STATE ──
+  let items = [
+    { desc: '', qty: 1, price: '' }
+  ];
+
+  function renderItemRows() {
+    const container = document.getElementById('itemRows');
+    container.innerHTML = '';
+    items.forEach((item, i) => {
+      const row = document.createElement('div');
+      row.className = 'item-row';
+      row.innerHTML = `
+        <input type="text" placeholder="Service description" value="${item.desc}" oninput="items[${i}].desc=this.value;update()">
+        <input type="number" placeholder="1" value="${item.qty}" min="1" oninput="items[${i}].qty=this.value;update()">
+        <input type="number" placeholder="0.00" value="${item.price}" min="0" step="0.01" oninput="items[${i}].price=this.value;update()">
+        <button class="remove-btn" onclick="removeItem(${i})">×</button>
+      `;
+      container.appendChild(row);
+    });
+  }
+
+  function addItem() {
+    items.push({ desc: '', qty: 1, price: '' });
+    renderItemRows();
+    update();
+  }
+
+  function removeItem(i) {
+    if (items.length === 1) return;
+    items.splice(i, 1);
+    renderItemRows();
+    update();
+  }
+
+  function formatCurrency(n) {
+    return '$' + parseFloat(n || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  }
+
+  function formatDate(val) {
+    if (!val) return '—';
+    const [y, m, d] = val.split('-');
+    const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+    return `${d} ${months[parseInt(m)-1]} ${y}`;
+  }
+
+  function update() {
+    // Basic fields
+    document.getElementById('prev-num').textContent = document.getElementById('invNum').value || 'INV-001';
+    document.getElementById('prev-issue').textContent = formatDate(document.getElementById('issueDate').value);
+    document.getElementById('prev-due').textContent = formatDate(document.getElementById('dueDate').value);
+    document.getElementById('prev-from-name').textContent = document.getElementById('fromName').value || 'Your Name';
+    document.getElementById('prev-from-contact').textContent = document.getElementById('fromContact').value || 'your@email.com';
+    document.getElementById('prev-to-name').textContent = document.getElementById('toName').value || 'Client Name';
+    document.getElementById('prev-to-contact').textContent = document.getElementById('toContact').value || 'client@email.com';
+
+    // Notes
+    const notes = document.getElementById('notes').value;
+    const notesWrap = document.getElementById('prev-notes-wrap');
+    if (notes.trim()) {
+      notesWrap.style.display = 'block';
+      document.getElementById('prev-notes').textContent = notes;
+    } else {
+      notesWrap.style.display = 'none';
+    }
+
+    // Line items
+    const prevItems = document.getElementById('prev-items');
+    prevItems.innerHTML = '';
+    let subtotal = 0;
+    items.forEach(item => {
+      if (!item.desc && !item.price) return;
+      const amount = (parseFloat(item.qty) || 0) * (parseFloat(item.price) || 0);
+      subtotal += amount;
+      const row = document.createElement('div');
+      row.className = 'inv-item-row';
+      row.innerHTML = `
+        <span>${item.desc || 'Service'}</span>
+        <span class="inv-item-qty">${item.qty || 1}</span>
+        <span>${formatCurrency(amount)}</span>
+      `;
+      prevItems.appendChild(row);
+    });
+
+    // Totals
+    const tax = subtotal * 0.1;
+    const total = subtotal + tax;
+    document.getElementById('prev-totals').innerHTML = `
+      <div class="inv-total-row"><span>SUBTOTAL</span><span>${formatCurrency(subtotal)}</span></div>
+      <div class="inv-total-row"><span>TAX (10%)</span><span>${formatCurrency(tax)}</span></div>
+      <div class="inv-total-row grand"><span>TOTAL DUE</span><span>${formatCurrency(total)}</span></div>
+    `;
+  }
+
+  function downloadPDF() {
+    window.print();
+  }
+
+  // ── PRINT STYLES ──
+  const printStyle = document.createElement('style');
+  printStyle.textContent = `
+    @media print {
+      body * { visibility: hidden; }
+      .invoice, .invoice * { visibility: visible; }
+      .invoice { position: fixed; top: 0; left: 0; width: 100%; box-shadow: none; }
+      .topbar, .form-panel, .upgrade-banner, .preview-label { display: none !important; }
+    }
+  `;
+  document.head.appendChild(printStyle);
+
+  // ── INIT ──
+  const today = new Date();
+  const due = new Date(); due.setDate(due.getDate() + 14);
+  const fmt = d => d.toISOString().split('T')[0];
+  document.getElementById('issueDate').value = fmt(today);
+  document.getElementById('dueDate').value = fmt(due);
+  document.getElementById('invNum').value = 'INV-001';
+
+  renderItemRows();
+  update();
+</script>
+
+</body>
+</html>
